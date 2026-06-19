@@ -1,0 +1,85 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ru.liner.sensorprivacy'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "ru.liner.sensorprivacy"
+        minSdk 31
+        targetSdk 34
+        versionCode 4
+        versionName "1.4-mic-cam-only"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildFeatures {
+        aidl true
+    }
+
+    // ===================================================================
+    //  Подпись релизного APK.
+    //  В локальной сборке (без keystore) подключится debug-ключ —
+    //  этого достаточно для установки вручную.
+    //  В GitHub Actions keystore передаётся через Secrets:
+    //    KEYSTORE_BASE64, KEYSTORE_PASSWORD,
+    //    KEY_ALIAS, KEY_PASSWORD
+    //  Workflow декодирует KEYSTORE_BASE64 в файл release.keystore
+    //  в корне проекта и проставит переменные окружения.
+    // ===================================================================
+    def keystorePath = System.getenv("KEYSTORE_PATH")
+    def keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+    def keyAlias = System.getenv("KEY_ALIAS")
+    def keyPassword = System.getenv("KEY_PASSWORD")
+    signingConfigs {
+        release {
+            if (keystorePath != null && file(keystorePath).exists()) {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (keystorePath != null && file(keystorePath).exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                // Fallback: подписать debug-ключом, чтобы APK всё равно
+                // собирался без настройки секретов. Удобно для новичков.
+                signingConfig signingConfigs.debug
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    def shizuku_version = '13.1.4'
+    def hiddenapibypass_version = '4.3'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.preference:preference:1.2.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.9.0'
+
+    implementation "dev.rikka.shizuku:api:$shizuku_version"
+    implementation "dev.rikka.shizuku:provider:$shizuku_version"
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation "org.lsposed.hiddenapibypass:hiddenapibypass:$hiddenapibypass_version"
+
+
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
